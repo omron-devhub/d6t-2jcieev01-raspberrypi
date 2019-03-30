@@ -23,63 +23,83 @@
  */
 #include "lis2dw.h"
 
-#define LIS2DW_DEVICEID     0x44
+#define LIS2DW_FIFO_SIZE   1
+#define LIS2DW_VAL_DEVICEID 0x44
 #define LIS2DW_CONV(x) ((double)(x) * 4000.0 / 32767.0)
 
 #define PIN_CSB 8
 
-bool lis2dw_setup(void) {
-    uint8_t outdat[6] = {0};
+#define conv8s_s16_le(b, n) ((int16_t)b[n] | ((int16_t)b[n + 1] << 8))
 
-    int fds  ;
-    fds = wiringPiSPISetup(0,500000);
-    if(fds < 0 ) {
+/** <!-- lis2dw_setup {{{1 --> setup a accerelometer sensor.
+ */
+bool lis2dw_setup(void) {
+    uint32_t retry = 100;
+    uint8_t wbuf[8] = {0};
+    uint8_t* rbuf = wbuf;
+
+    int fds;
+    fds = wiringPiSPISetup(0, 500000);
+    if (fds < 0) {
        printf("SPI NG\n");
+       return true;
     }
 
-    outdat[0] = 0x0F;
-    outdat[0] |= 0x80;
-    pinMode(PIN_CSB,OUTPUT);
-    digitalWrite(PIN_CSB,HIGH);
-    digitalWrite(PIN_CSB,LOW);
-    wiringPiSPIDataRW(0,outdat,2);
-    digitalWrite(PIN_CSB,HIGH);
-//    printf("SPI WHO AM %X\n",outdat[1]);
+    pinMode(PIN_CSB, OUTPUT);
+    digitalWrite(PIN_CSB, HIGH);
 
-    outdat[0]=0x20;
-    outdat[1]=0x54;
-    outdat[2]=0x06;
-    outdat[3]=0x00;
-    outdat[4]=0x00;
-    outdat[5]=0x00;
-    outdat[6]=0x14;
+    /* Check connection */
+    while ((rbuf[0] != LIS2DW_VAL_DEVICEID) && (retry > 0)) {
+        wbuf[0] = LIS2DW_REG_WHOAMI;
+        digitalWrite(PIN_CSB, LOW);
+        wiringPiSPIDataRW(0, wbuf, 2);
+        digitalWrite(PIN_CSB, HIGH);
+        retry--;
+    }
+    if (retry <= 0) {
+        printf("cannot find LIS2DW on SPI-bus.");
+        return true;
+    }
 
-    digitalWrite(PIN_CSB,LOW);
-    wiringPiSPIDataRW(0,outdat,7);
-    digitalWrite(PIN_CSB,HIGH);
+    wbuf[0] = LIS2DW_REG_CTRL1;
+    wbuf[1] = 0x54;   // REG1: 100Hz, High-Performance
+    wbuf[2] = 0x06;   // REG2:
+    wbuf[3] = 0x00;   // REG3:
+    wbuf[4] = 0x00;   // REG4: INT1
+    wbuf[5] = 0x00;   // REG5: INT2
+    wbuf[6] = 0x14;   // REG6: FS 4g
+
+    digitalWrite(PIN_CSB, LOW);
+    wiringPiSPIDataRW(0, wbuf, 7);
+    digitalWrite(PIN_CSB, HIGH);
     return false;
 }
 
-bool lis2dw_read(int16_t* accl) {
-    uint8_t outdat[7] = {0};
+/** <!-- lis2dw_read_and_avg {{{1 --> get accerelo values from FIFO and
+ * make average values.
+ */
+bool lis2dw_read_and_avg(int16_t* accl) {
+    uint8_t accbuf[1 + 3 * 2 * LIS2DW_FIFO_SIZE] = {0};
+    int32_t accsum[3] = {0, 0, 0};
 
-    outdat[0]=0x28;
-    outdat[0] |= 0x80;
-    digitalWrite(PIN_CSB,LOW);
-    wiringPiSPIDataRW(0,outdat,7);
-    digitalWrite(PIN_CSB,HIGH);
-    accl[0] = (int16_t)(((int16_t)outdat[2] << 8) | outdat[1]);
-    accl[1] = (int16_t)(((int16_t)outdat[4] << 8) | outdat[3]);
-    accl[2] = (int16_t)(((int16_t)outdat[6] << 8) | outdat[5]);
+    accbuf[0] = LIS2DW_REG_OUT_X_L;
+    digitalWrite(PIN_CSB, LOW);
+    wiringPiSPIDataRW(0, accbuf, sizeof(accbuf));
+    digitalWrite(PIN_CSB, HIGH);
+    for (uint8_t i = 0; i < LIS2DW_FIFO_SIZE; i++) {
+        int n = i * 6;
+        accsum[0] += (int32_t)conv8s_s16_le(accbuf, n + 1);  // 1=skip addr.
+        accsum[1] += (int32_t)conv8s_s16_le(accbuf, n + 3);
+        accsum[2] += (int32_t)conv8s_s16_le(accbuf, n + 5);
+    }
+    accl[0] = (int16_t)(accsum[0] / LIS2DW_FIFO_SIZE);
+    accl[1] = (int16_t)(accsum[1] / LIS2DW_FIFO_SIZE);
+    accl[2] = (int16_t)(accsum[2] / LIS2DW_FIFO_SIZE);
     return false;
 }
 
 
-
-
-
-
-/** <!-- main - humidity sensor {{{1 -->
+/** <!-- main - accelerometer sensor {{{1 -->
  * 1. setup sensor
  * 2. output results, format is: [mg]
  */
@@ -90,7 +110,7 @@ int main() {
     if (lis2dw_setup()) {
         return 1;
     }
-    if (lis2dw_read(accl)) {
+    if (lis2dw_read_and_avg(accl)) {
         return 2;
     }
     mg[0] = LIS2DW_CONV(accl[0]);  // x

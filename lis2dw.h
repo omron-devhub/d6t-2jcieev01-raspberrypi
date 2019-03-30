@@ -31,4 +31,7 @@
 #include <wiringPi.h>
 #include <wiringPiSPI.h>
 
+#define LIS2DW_REG_WHOAMI        (0x0F | 0x80)
+#define LIS2DW_REG_CTRL1         0x20
+#define LIS2DW_REG_OUT_X_L       (0x28 | 0x80)
 #endif
