@@ -1,6 +1,7 @@
 
 .PHONY: baro illm humi accl mmic
 
+cpplint_flags:=--filter=-readability/casting,-build/include_subdir
 ifeq (x$(cpplint),x)
 cpplint := echo lint with cpplint, option:
 endif
@@ -8,19 +9,19 @@ endif
 all: baro illm humi accl mmic
 
 baro: 2jcieev01-baro.c
-	$(cpplint) --filter=-readability/casting,-build/include_subdir $^
+	$(cpplint) $(cpplint_flags) $^
 	gcc $(CFLAGS) $^ -o 2jcieev01-baro
 
 illm: 2jcieev01-illm.c
-	$(cpplint) --filter=-readability/casting,-build/include_subdir $^
+	$(cpplint) $(cpplint_flags) $^
 	gcc $(CFLAGS) $^ -o 2jcieev01-illm
 
 humi: 2jcieev01-humi.c
-	$(cpplint) --filter=-readability/casting,-build/include_subdir $^
+	$(cpplint) $(cpplint_flags) $^
 	gcc $(CFLAGS) $^ -o 2jcieev01-humi
 
 accl: 2jcieev01-accl.c
-	$(cpplint) --filter=-readability/casting,-build/include_subdir $^
+	$(cpplint) $(cpplint_flags) $^
 	gcc $(CFLAGS) $^ -o 2jcieev01-accl
 
 mmic:
