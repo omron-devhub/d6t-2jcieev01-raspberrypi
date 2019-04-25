@@ -49,7 +49,7 @@ bool lis2dw_setup(void) {
     digitalWrite(PIN_CSB, HIGH);
 
     /* Check connection */
-    while ((rbuf[0] != LIS2DW_VAL_DEVICEID) && (retry > 0)) {
+    while ((wbuf[1] != LIS2DW_VAL_DEVICEID) && (retry > 0)) {
         wbuf[0] = LIS2DW_REG_WHOAMI;
         digitalWrite(PIN_CSB, LOW);
         wiringPiSPIDataRW(0, wbuf, 2);
@@ -110,6 +110,7 @@ int main() {
     if (lis2dw_setup()) {
         return 1;
     }
+    delay(100);
     if (lis2dw_read_and_avg(accl)) {
         return 2;
     }
@@ -120,6 +121,7 @@ int main() {
     #if defined(OUTPUT_RAW)  // raw output
     printf("%7.1f, %7.1f, %7.1f\n", accl[0], accl[1], accl[2]);
     #endif
+    pinModeAlt(PIN_CSB, 0b100);
     return 0;
 }
 // vi: ft=arduino:fdm=marker:et:sw=4:tw=80
