@@ -22,7 +22,7 @@ humi: 2jcieev01-humi.c
 
 accl: 2jcieev01-accl.c
 	$(cpplint) $(cpplint_flags) $^
-	gcc $(CFLAGS) $^ -o 2jcieev01-accl
+	gcc $(CFLAGS) -lwiringPi -lm $^ -o 2jcieev01-accl
 
 mmic:
 	echo there is no sample for MEMS Microphone,
