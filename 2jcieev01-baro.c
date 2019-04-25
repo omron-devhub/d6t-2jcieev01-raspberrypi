@@ -308,6 +308,7 @@ int main() {
     if (ap_2smpb02e_setup()) {
         return 1;
     }
+    delay(100);
     ap_2smpb02e_read(&pres, &temp, &dp, &dt);
     printf("%10.1f, %7.3f, %x, %x\n", pres / 10.0, temp / 100.0, dp, dt);
     return 0;

@@ -197,6 +197,7 @@ int main() {
     if (opt3001_setup()) {
         return 1;
     }
+    delay(110);
     if (opt3001_read_data(&illm)) {
         return 2;
     }

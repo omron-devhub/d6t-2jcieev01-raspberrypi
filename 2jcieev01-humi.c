@@ -263,6 +263,7 @@ int main() {
     if (sht30_setup()) {
         return 1;
     }
+    delay(100);
     if (sht30_read_triggered_TRH_x100(&temp, &humi)) {
         return 2;
     }
