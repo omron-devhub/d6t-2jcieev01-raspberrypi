@@ -33,6 +33,7 @@
 #include <errno.h>
 #include <sys/ioctl.h>
 #include <linux/i2c-dev.h>
+#include <stdbool.h>
 
 #define OPT3001_SLAVE_ADDR                 ((uint8_t)0x45)  /* Slave address */
 

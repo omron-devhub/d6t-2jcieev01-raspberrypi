@@ -73,7 +73,7 @@ uint32_t i2c_write_reg8(uint8_t devAddr, uint8_t regAddr, uint8_t* data , uint8_
     }
     count = write(fd, buf, length+1);
     if (count < 0) {
-        fprintf(stderr, "Failed to write device(%d): %s\n", count, ::strerror(errno));
+        fprintf(stderr, "Failed to write device(%d): %s\n", count, strerror(errno));
         close(fd);
         return(1);
     } else if (count != length+1) {
@@ -107,7 +107,7 @@ uint32_t i2c_read_reg8(uint8_t devAddr, uint8_t regAddr, uint8_t *data, uint8_t 
     count = read(fd, data, length);
 
     if (count < 0) {
-        fprintf(stderr, "Failed to read device(%d): %s\n", count, ::strerror(errno));
+        fprintf(stderr, "Failed to read device(%d): %s\n", count, strerror(errno));
         close(fd);
         return(1);
     } else if (count != length) {

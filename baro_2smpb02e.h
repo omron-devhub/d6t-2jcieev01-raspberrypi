@@ -33,6 +33,7 @@
 #include <errno.h>
 #include <sys/ioctl.h>
 #include <linux/i2c-dev.h>
+#include <stdbool.h>
 
 /*=========================================================================
     I2C ADDRESS/BITS
@@ -130,6 +131,6 @@
 bool ap_2smpb02e_output_compensation(
         uint32_t raw_temp_val, uint32_t raw_press_val,
         uint32_t* pres, int16_t* temp);
-void ap_2smpb02e_read();
-
+bool ap_2smpb02e_read(uint32_t* pres, int16_t* temp,
+                      uint32_t* dp, uint32_t* dt);
 #endif
