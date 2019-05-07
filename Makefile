@@ -25,8 +25,8 @@ accl: 2jcieev01-accl.c
 	gcc $(CFLAGS) -lwiringPi -lm $^ -o 2jcieev01-accl
 
 mmic:
-	echo there is no sample for MEMS Microphone,
-	echo you can use  MEMS Microphone sensor from ALSA libraries or
-	echo basic `arecord` program.
-	echo please refer the README.
+	@echo there is no sample for MEMS Microphone,
+	@echo you can use  MEMS Microphone sensor from ALSA libraries or
+	@echo basic `arecord` program.
+	@echo please refer the README.
 

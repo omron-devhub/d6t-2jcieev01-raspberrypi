@@ -27,108 +27,83 @@
 #define RASPBERRY_PI_I2C    "/dev/i2c-1"
 #define I2CDEV              RASPBERRY_PI_I2C
 
-int fd ;
 
-uint32_t i2c_write_reg16(uint8_t devAddr, uint16_t regAddr, uint8_t* data , uint8_t length) {
-    int8_t count = 0;
+uint32_t i2c_write_reg16(uint8_t devAddr, uint16_t regAddr,
+                         uint8_t* data , uint8_t length
+) {
     uint8_t buf[128];
-
     if (length > 127) {
         fprintf(stderr, "Byte write count (%d) > 127\n", length);
-        return(1);
+        return 11;
     }
 
-    fd = open(I2CDEV , O_RDWR);
+    int fd = open(I2CDEV , O_RDWR);
     if (fd < 0) {
         fprintf(stderr, "Failed to open device: %s\n", strerror(errno));
-        return(1);
+        return 12;
     }
-    if (ioctl(fd, I2C_SLAVE, devAddr) < 0) {
-        fprintf(stderr, "Failed to select device: %s\n", strerror(errno));
-        close(fd);
-        return(1);
-    }
-    uint8_t regAddr2 = regAddr >> 8;
-    buf[0] = regAddr2 ;
-//    printf("buf0:%X\n",buf[0]);
-    regAddr2 = regAddr & 0x00FF;
-    buf[1] = regAddr2 ;
-//    printf("buf1:%X\n",buf[1]);
-    if(length > 0 ) {
-        memcpy(buf+2,data,length);
-    }
-    count = write(fd, buf, length+2);
-    if (count < 0) {
-        fprintf(stderr, "Failed to write device(%d): %s\n", count, strerror(errno));
-        close(fd);
-        return(1);
-    } else if (count != length+2) {
-        fprintf(stderr, "Short write to device, expected %d, got %d\n", length+2, count);
-        close(fd);
-        return(1);
-    }
+    int err = 0;
+    do {
+        if (ioctl(fd, I2C_SLAVE, devAddr) < 0) {
+            fprintf(stderr, "Failed to select device: %s\n", strerror(errno));
+            err = 13; break;
+        }
+        buf[0] = regAddr >> 8;
+        buf[1] = regAddr & 0xFF;
+        if (length > 0) {
+            memcpy(buf + 2, data, length);
+        }
+        length += 2;
+        int count = write(fd, buf, length);
+        if (count < 0) {
+            fprintf(stderr, "Failed to write device(%d): %s\n",
+                    count, strerror(errno));
+            err = 14; break;
+        } else if (count != length) {
+            fprintf(stderr, "Short write to device, expected %d, got %d\n",
+                    length, count);
+            err = 15; break;
+        }
+    } while (false);
     close(fd);
-
-    return 0;
-
+    return err;
 }
 
-/*
-bool i2c_write_8(uint8_t devAddr, uint8_t regAddr, uint8_t* data , uint8_t length) {
-    if(wiringPiI2CWriteReg8(devAddr,regAddr,data) < 0 ) {
-        printf("Error i2c write");
-    }
-    else return(TRUE);
-}*/
-
-uint32_t i2c_read_reg16(uint8_t devAddr, uint16_t regAddr, uint8_t *data, uint8_t length) {
-  /*修正*/
-    int8_t count = 0;
-
-    fd = open(I2CDEV, O_RDWR);
+uint32_t i2c_read_reg16(uint8_t devAddr, uint16_t regAddr,
+                        uint8_t *data, uint8_t length
+) {
+    int fd = open(I2CDEV, O_RDWR);
 
     if (fd < 0) {
         fprintf(stderr, "Failed to open device: %s\n", strerror(errno));
-        return(1);
+        return 21;
     }
-    if (ioctl(fd, I2C_SLAVE, devAddr) < 0) {
-        fprintf(stderr, "Failed to select device: %s\n", strerror(errno));
-        close(fd);
-        return(1);
-    }
-    uint8_t regAddr2 = regAddr >> 8 ;   
-    if (write(fd, &regAddr2, 1) != 1) {
-        fprintf(stderr, "Failed to write reg: %s\n", strerror(errno));
-        close(fd);
-        return(1);
-    }
-    regAddr2 = regAddr ;
-    if (write(fd, &regAddr2, 1) != 1) {
-        fprintf(stderr, "Failed to write reg: %s\n", strerror(errno));
-        close(fd);
-        return(1);
-    }
-    count = read(fd, data, length);
-    //printf("%d",regAddr);
-
-    if (count < 0) {
-        fprintf(stderr, "Failed to read device(%d): %s\n", count, strerror(errno));
-        close(fd);
-        return(1);
-    } else if (count != length) {
-        fprintf(stderr, "Short read  from device, expected %d, got %d\n", length, count);
-        close(fd);
-        return(1);
-    }
+    int err = 0;
+    do {
+        if (ioctl(fd, I2C_SLAVE, devAddr) < 0) {
+            fprintf(stderr, "Failed to select device: %s\n", strerror(errno));
+            err = 22; break;
+        }
+        uint8_t buf[2] = {regAddr >> 8, regAddr & 0xFF};
+        if (write(fd, buf, 2) != 2) {
+            fprintf(stderr, "Failed to write reg: %s\n", strerror(errno));
+            err = 23; break;
+        }
+        int count = read(fd, data, length);
+        if (count < 0) {
+            fprintf(stderr, "Failed to read device(%d): %s\n",
+                    count, strerror(errno));
+            err = 24; break;
+        } else if (count != length) {
+            fprintf(stderr, "Short read  from device, expected %d, got %d\n",
+                    length, count);
+            err = 25; break;
+        }
+    } while (false);
     close(fd);
-
-    return 0;
-
+    return err;
 }
 
-#if !defined(BARO_SAMPLE)
-// vi: ft=c:fdm=marker:et:sw=4:tw=80
-#endif
 static uint32_t sht30_write_verify_user_register(void);
 static uint32_t sht30_read_triggered_value(
         uint16_t *value_T_raw,
