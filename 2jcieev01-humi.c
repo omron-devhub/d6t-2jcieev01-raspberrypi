@@ -21,7 +21,7 @@
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
  * DEALINGS IN THE SOFTWARE.
  */
-/** @Includes ----------------------------------------------------------------*/
+/* includes */
 #include "sht30.h"
 
 #define RASPBERRY_PI_I2C    "/dev/i2c-1"
@@ -72,6 +72,8 @@ uint32_t i2c_write_reg16(uint8_t devAddr, uint16_t regAddr,
     return err;
 }
 
+/** <!-- i2c_read_reg16 {{{1 --> I2C read function for bytes transfer.
+ */
 uint32_t i2c_read_reg16(uint8_t devAddr, uint16_t regAddr,
                         uint8_t *data, uint8_t length
 ) {
@@ -117,8 +119,9 @@ static int32_t sht30_convert_humidity_value_x100(uint16_t value_raw);
 /** <!-- sht30_setup {{{1 --> setup a humidity sensor.
  */
 bool sht30_setup(void) {
-    if (sht30_write_verify_user_register()) {
-        printf("sht NG");
+    int ret = sht30_write_verify_user_register();
+    if (ret) {
+        printf("sht NG=>%d", ret);
         return true;
     }
     return false;
@@ -137,11 +140,11 @@ static uint32_t sht30_write_verify_user_register(void) {
     }
 
     /* Read Out of status register */
-    uint8_t retry = 10;
+    int retry = 10;
     do {
         result = i2c_read_reg16(SHT30_SLAVE_ADDR, SHT30_READ_STATUS,
                                 read_buff, 3);
-        delay(5);
+        delay(10);
 
     /* Read Data Check */
     } while ((result || (read_buff[0] != 0x00) || (read_buff[1] != 0x00)) &&
@@ -237,10 +240,9 @@ int main() {
         return 1;
     }
     delay(100);
-    if (sht30_read_triggered_TRH_x100(&temp, &humi)) {
-        return 2;
-    }
-    printf("%5.2f, %7.1f\n", (double)humi / 100.0, (double)temp / 100.0);
+    int ret = sht30_read_triggered_TRH_x100(&temp, &humi);
+    printf("%5.2f, %7.1f, return code:%d\n",
+           (double)humi / 100.0, (double)temp / 100.0, ret);
     return 0;
 }
 // vi: ft=arduino:fdm=marker:et:sw=4:tw=80

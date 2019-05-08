@@ -3,25 +3,32 @@
 
 cpplint_flags:=--filter=-readability/casting,-build/include_subdir
 ifeq (x$(cpplint),x)
-cpplint := echo lint with cpplint, option:
+cpplint := @echo lint with cpplint, option:
+endif
+ifeq (x$(cppcheck),x)
+cppcheck := @echo lint with cppcheck, option:
 endif
 
 all: baro illm humi accl mmic
 
 baro: 2jcieev01-baro.c
 	$(cpplint) $(cpplint_flags) $^
+	$(cppcheck) --enable=all $^
 	gcc $(CFLAGS) $^ -o 2jcieev01-baro
 
 illm: 2jcieev01-illm.c
 	$(cpplint) $(cpplint_flags) $^
+	$(cppcheck) --enable=all $^
 	gcc $(CFLAGS) $^ -o 2jcieev01-illm
 
 humi: 2jcieev01-humi.c
 	$(cpplint) $(cpplint_flags) $^
+	$(cppcheck) --enable=all $^
 	gcc $(CFLAGS) $^ -o 2jcieev01-humi
 
 accl: 2jcieev01-accl.c
 	$(cpplint) $(cpplint_flags) $^
+	$(cppcheck) --enable=all $^
 	gcc $(CFLAGS) -lwiringPi -lm $^ -o 2jcieev01-accl
 
 mmic:

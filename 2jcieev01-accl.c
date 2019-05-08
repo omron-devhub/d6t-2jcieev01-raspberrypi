@@ -21,8 +21,10 @@
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
  * DEALINGS IN THE SOFTWARE.
  */
+/* includes */
 #include "lis2dw.h"
 
+/* defines */
 #define LIS2DW_FIFO_SIZE   1
 #define LIS2DW_VAL_DEVICEID 0x44
 #define LIS2DW_CONV(x) ((double)(x) * 4000.0 / 32767.0)
@@ -34,7 +36,7 @@
 /** <!-- lis2dw_setup {{{1 --> setup a accerelometer sensor.
  */
 bool lis2dw_setup(void) {
-    uint32_t retry = 100;
+    int retry = 100;
     uint8_t wbuf[8] = {0};
 
     int fds;
@@ -77,7 +79,7 @@ bool lis2dw_setup(void) {
 /** <!-- lis2dw_read_and_avg {{{1 --> get accerelo values from FIFO and
  * make average values.
  */
-bool lis2dw_read_and_avg(int16_t* accl) {
+int lis2dw_read_and_avg(int16_t* accl) {
     uint8_t accbuf[1 + 3 * 2 * LIS2DW_FIFO_SIZE] = {0};
     int32_t accsum[3] = {0, 0, 0};
 
@@ -94,7 +96,7 @@ bool lis2dw_read_and_avg(int16_t* accl) {
     accl[0] = (int16_t)(accsum[0] / LIS2DW_FIFO_SIZE);
     accl[1] = (int16_t)(accsum[1] / LIS2DW_FIFO_SIZE);
     accl[2] = (int16_t)(accsum[2] / LIS2DW_FIFO_SIZE);
-    return false;
+    return 0;
 }
 
 

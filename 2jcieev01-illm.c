@@ -160,21 +160,22 @@ static uint32_t opt3001_read_triggered_value(uint16_t *value_data) {
     if (err_code) {
         return err_code;
     }
-    if ((read_buff[1] & 0x80) != 0x80) {
-        return 1;  // still working... TODO: change return code to unique.
+    if ((read_buff[1] & 0x80) == 0) {
+        return 2;  // sensor is working...
     }
 
     err_code = i2c_read_reg8(OPT3001_SLAVE_ADDR, OPT3001_REG_RESULT,
             read_buff, sizeof(read_buff));
     if (err_code) {
-        return err_code;
+        return 100 + err_code;
     }
 
     *value_data = conv8s_u16_be(read_buff, 0);
     return 0;
 }
 
-/** <!-- opt3001_convert_lux_value_x100 {{{1 --> convert raw digit to [lx]
+/** <!-- opt3001_convert_lux_value_x100 {{{1 --> convert sensors
+ * raw output digits to [100lx]
  */
 uint32_t opt3001_convert_lux_value_x100(uint16_t value_raw) {
     uint32_t value_converted = 0;
@@ -201,10 +202,8 @@ int main() {
         return 1;
     }
     delay(110);
-    if (opt3001_read_data(&illm)) {
-        return 2;
-    }
-    printf("%10.2f\n", illm / 100.0);
+    int ret = opt3001_read_data(&illm);
+    printf("%10.2f, return code: %d\n", illm / 100.0, ret);
     return 0;
 }
 // vi: ft=arduino:fdm=marker:et:sw=4:tw=80
