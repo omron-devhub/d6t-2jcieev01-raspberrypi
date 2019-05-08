@@ -150,9 +150,8 @@ static uint32_t sht30_write_verify_user_register(void) {
     } while ((result || (read_buff[0] != 0x00) || (read_buff[1] != 0x00)) &&
              (retry-- > 0));
 
-    if (retry) {
-        return result;
-    }
+    if (result) {return result;}
+    if (retry) {return 31;}
 
     /* Measurement Commands for Periodic Data Acquisition Mode */
     do {
@@ -162,9 +161,8 @@ static uint32_t sht30_write_verify_user_register(void) {
     /* Read Data Check */
     } while (result && (retry-- > 0));
 
-    if (retry) {
-        return result;
-    }
+    if (result) {return 100 + result;}
+    if (retry) {return 32;}
     return 0;
 }
 
