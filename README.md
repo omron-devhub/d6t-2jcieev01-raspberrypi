@@ -2,8 +2,8 @@
 It is a sample projects for OMRON sensor evaluation kit **2JCIE-EV01-RP1**
 with Raspberry-Pi boards.
 
-2JCIE-EV01 sensor evaluation kits are ...T.B.D...
-(see 2SMPB-02E projects abstract)
+2JCIE-EV01 sensor evaluation boards are Open Platforms by OMRON corporation and
+prototype your ideas with variety environmental information.
 
 ## Description
 Sample programs for acquiring data from sensors on 2JCIE-EV01.
@@ -17,7 +17,7 @@ there samples output the sensor data to console.
 | 2jcieev01-accl | The Accelerometer sensor sample | Raspberry-Pi ZERO-W |
 
 ## DEMO
-T.B.D.
+T.B.D (console output)
 
 ## Installation
 ### Prerequisite
@@ -29,7 +29,14 @@ T.B.D.
 this procedure shows the procedure to use the sensors on
 **2JCIE-EV01-RP1** (except microphone).
 
-1. download this repo
+1. download the archive from github [releases](releases) or
+    [master](archive/2jcieev01-raspberrypi-master.zip)
+
+    ```shell
+    $ unzip 2jcieev01-raspberrypi-master.zip
+    ```
+
+    or, with git:
 
     ```shell
     $ git clone https://github.com/omron-devhub/2jcieev01-raspberrypi
@@ -38,7 +45,7 @@ this procedure shows the procedure to use the sensors on
 2. make
 
     ```shell
-    $ cd 2jcieev01-raspberrypi
+    $ cd 2jcieev01-raspberrypi-master
     $ make all
     ```
 
@@ -95,6 +102,10 @@ $ cd $HOME
 $ cat > .asoundrc
 T.B.D.
 ```
+
+## Links
+- [Arduino projects for 2JCIE-01-AR1, FT1](/omron-devhub/2jcieev01-arduino)
+
 
 ## Licence
 Copyright (c) OMRON Corporation. All rights reserved.
