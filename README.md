@@ -104,7 +104,7 @@ T.B.D.
 ```
 
 ## Links
-- [Arduino projects for 2JCIE-01-AR1, FT1](/omron-devhub/2jcieev01-arduino)
+- [Arduino projects for 2JCIE-01-AR1, FT1](https://github.com/omron-devhub/2jcieev01-arduino)
 
 
 ## Licence
