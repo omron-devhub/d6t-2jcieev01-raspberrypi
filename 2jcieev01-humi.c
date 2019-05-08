@@ -27,6 +27,9 @@
 #define RASPBERRY_PI_I2C    "/dev/i2c-1"
 #define I2CDEV              RASPBERRY_PI_I2C
 
+#define conv8s_u16_be(b, n) \
+    (uint16_t)(((uint16_t)b[n] << 8) | (uint16_t)b[n + 1])
+
 
 uint32_t i2c_write_reg16(uint8_t devAddr, uint16_t regAddr,
                          uint8_t* data , uint8_t length
@@ -138,31 +141,25 @@ static uint32_t sht30_write_verify_user_register(void) {
     do {
         result = i2c_read_reg16(SHT30_SLAVE_ADDR, SHT30_READ_STATUS,
                                 read_buff, 3);
-        if (result) {
-            return result;
-        }
-        retry--;
+        delay(5);
 
     /* Read Data Check */
-    } while (
-        result &&
-        ((read_buff[0] != 0x00) ||
-        (read_buff[1] != 0x00)) &&
-        (retry > 0));
+    } while ((result || (read_buff[0] != 0x00) || (read_buff[1] != 0x00)) &&
+             (retry-- > 0));
 
-    if (retry == 0) {
+    if (retry) {
         return result;
     }
 
     /* Measurement Commands for Periodic Data Acquisition Mode */
     do {
-        result = i2c_write_reg16(SHT30_SLAVE_ADDR, SHT30_CMD_MASURE, NULL, 0);
-        retry--;
+        result = i2c_write_reg16(SHT30_SLAVE_ADDR, SHT30_CMD_MEASURE, NULL, 0);
+        delay(5);
 
     /* Read Data Check */
-    } while (result && (retry > 0));
+    } while (result && (retry-- > 0));
 
-    if (retry == 0) {
+    if (retry) {
         return result;
     }
     return 0;
@@ -185,7 +182,7 @@ int32_t sht30_read_triggered_TRH_x100(int32_t *value_T, int32_t *value_RH) {
     /* Convert the value to centidegrees Celsius */
     *value_T = sht30_convert_temperature_value_x100(value_T_raw);
     *value_RH = sht30_convert_humidity_value_x100(value_RH_raw);
-    return result;
+    return 0;
 }
 
 /** <!-- sht30_read_triggered_value {{{1 --> just read sensor raw values.
@@ -196,14 +193,15 @@ static uint32_t sht30_read_triggered_value(
     uint32_t result;
     uint8_t read_buff[6];
 
-    result = i2c_read_reg16(SHT30_SLAVE_ADDR, SHT30_READ_MASURE, read_buff, 6);
+    result = i2c_read_reg16(SHT30_SLAVE_ADDR,
+                            SHT30_READ_MEASURE, read_buff, 6);
     if (result) {
         return result;
     }
 
-    *value_T_raw = (uint16_t)(((uint16_t)read_buff[0] << 8) | read_buff[1]);
-    *value_RH_raw = (uint16_t)(((uint16_t)read_buff[3] << 8) | read_buff[4]);
-    return result;
+    *value_T_raw = conv8s_u16_be(read_buff, 0);
+    *value_RH_raw = conv8s_u16_be(read_buff, 3);
+    return 0;
 }
 
 /** <!-- sht30_convert_humidity_value_x100 {{1 --> convert raw digit to

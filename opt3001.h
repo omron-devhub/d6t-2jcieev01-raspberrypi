@@ -27,7 +27,6 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <fcntl.h>
-#include <math.h>
 #include <unistd.h>
 #include <string.h>
 #include <errno.h>

@@ -27,6 +27,9 @@
 #define RASPBERRY_PI_I2C    "/dev/i2c-1"
 #define I2CDEV              RASPBERRY_PI_I2C
 
+#define conv8s_u16_be(b, n) \
+    (uint16_t)(((uint16_t)b[n] << 8) | (uint16_t)b[n + 1])
+
 
 uint32_t i2c_write_reg8(uint8_t devAddr, uint8_t regAddr,
                         uint8_t* data , uint8_t length
@@ -143,7 +146,7 @@ uint32_t opt3001_read_data(uint16_t *light_x100) {
     }
 
     *light_x100 = (uint16_t)(opt3001_convert_lux_value_x100(value_data) / 100);
-    return err_code;
+    return 0;
 }
 
 /** <!-- opt3001_read_triggered_value {{{1 --> read sensor value
@@ -167,21 +170,22 @@ static uint32_t opt3001_read_triggered_value(uint16_t *value_data) {
         return err_code;
     }
 
-    *value_data = (uint16_t)(((uint16_t)read_buff[0] << 8) | read_buff[1]);
-    return err_code;
+    *value_data = conv8s_u16_be(read_buff, 0);
+    return 0;
 }
 
 /** <!-- opt3001_convert_lux_value_x100 {{{1 --> convert raw digit to [lx]
  */
 uint32_t opt3001_convert_lux_value_x100(uint16_t value_raw) {
     uint32_t value_converted = 0;
-    uint8_t exp;
-    uint16_t data;
+    uint32_t exp;
+    uint32_t data;
 
     /* Convert the value to centi-percent RH */
     exp = (value_raw >> 12) & 0x0F;
+    exp = 2 << exp;
     data = value_raw & 0x0FFF;
-    value_converted = (uint32_t)((uint16_t)(pow(2, exp)) * data);
+    value_converted = (uint32_t)(exp * data);
 
     return value_converted;
 }
