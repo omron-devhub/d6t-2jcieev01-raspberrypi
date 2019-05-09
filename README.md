@@ -100,8 +100,29 @@ you can fix the volume via `.asoundrc` like this::
 ```shell
 $ cd $HOME
 $ cat > .asoundrc
-T.B.D.
+pcm.!default {
+    type plug
+    slave {
+        pcm i2s
+    }
+    ttable.0.0 1.0
+    ttable.0.1 1.0
+}
+
+pcm.i2s {
+    type hw
+    card 1
+}
+
+ctl.!default {
+    type hw
+    card 0
+}
+^D
 ```
+
+**^D is ctrl + D**
+
 
 ## Links
 - [Arduino projects for 2JCIE-01-AR1, FT1](https://github.com/omron-devhub/2jcieev01-arduino)
