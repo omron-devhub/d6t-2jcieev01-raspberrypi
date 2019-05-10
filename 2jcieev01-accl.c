@@ -39,6 +39,10 @@ bool lis2dw_setup(void) {
     int retry = 100;
     uint8_t wbuf[8] = {0};
 
+    if (wiringPiSetup() < 0) {
+        return 1;
+    }
+
     int fds;
     fds = wiringPiSPISetup(0, 500000);
     if (fds < 0) {

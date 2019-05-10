@@ -34,6 +34,8 @@
 #include <linux/i2c-dev.h>
 #include <stdbool.h>
 
+#include <wiringPi.h>
+
 #define OPT3001_SLAVE_ADDR                 ((uint8_t)0x45)  /* Slave address */
 
 /* Commands */

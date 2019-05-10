@@ -34,6 +34,8 @@
 #include <sys/ioctl.h>
 #include <linux/i2c-dev.h>
 
+#include <wiringPi.h>
+
 #define SHT30_SLAVE_ADDR (uint8_t)0x44   /* Slave address */
 
 /* Settings */

@@ -27,6 +27,8 @@
 #define RASPBERRY_PI_I2C    "/dev/i2c-1"
 #define I2CDEV              RASPBERRY_PI_I2C
 
+#define SHT30_STATUSMASK 0xFC1F
+
 #define conv8s_u16_be(b, n) \
     (uint16_t)(((uint16_t)b[n] << 8) | (uint16_t)b[n + 1])
 
@@ -141,17 +143,19 @@ static uint32_t sht30_write_verify_user_register(void) {
 
     /* Read Out of status register */
     int retry = 10;
+    uint16_t stat;
     do {
         result = i2c_read_reg16(SHT30_SLAVE_ADDR, SHT30_READ_STATUS,
                                 read_buff, 3);
         delay(10);
+        stat = conv8s_u16_be(read_buff, 0);
 
     /* Read Data Check */
-    } while ((result || (read_buff[0] != 0x00) || (read_buff[1] != 0x00)) &&
+    } while ((result || (stat & SHT30_STATUSMASK) != 0) &&
              (retry-- > 0));
 
     if (result) {return result;}
-    if (retry) {return 31;}
+    if (retry <= 0) {return 0x10000 | stat;}
 
     /* Measurement Commands for Periodic Data Acquisition Mode */
     do {
@@ -162,7 +166,7 @@ static uint32_t sht30_write_verify_user_register(void) {
     } while (result && (retry-- > 0));
 
     if (result) {return 100 + result;}
-    if (retry) {return 32;}
+    if (retry <= 0) {return 32;}
     return 0;
 }
 
