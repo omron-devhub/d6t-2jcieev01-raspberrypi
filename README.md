@@ -1,33 +1,44 @@
-# 2jcieev01-raspberrypi
-It is a sample projects for OMRON sensor evaluation kit **2JCIE-EV01-RP1**
-with Raspberry-Pi boards.
+# d6t-2jcieev01-raspberrypi
+It is a sample projects for D6T OMRON MEMS Thermal Sensors with
+evaluation kit **2JCIE-EV01-AR1**,
+**2JCIE-EV01-FT1** and some Arduino boards.
 
-2JCIE-EV01 sensor evaluation boards are Open Platforms by OMRON corporation and
-prototype your ideas with variety environmental information.
+D6T sensor series are High Sensitivity Enables Detection
+of Stationary Human Presence,
+
+- OMRON's unique MEMS and ASIC technology achieve a high SNR.
+- Superior noise immunity with a digital output.
+- High-precision area temperature detection with low cross-talk field of
+    view characteristics
+
 
 ## Description
-Sample programs for acquiring data from sensors on 2JCIE-EV01.
-there samples output the sensor data to console.
+this Arduino sample projects for acquiring data from sensors on 2JCIE-EV01.
+sample projects output the sensor data to USB-Serial ports.
 
-| example        | description                     | baord |
-|:--------------:|:--------------------------------|:--------------------|
-| 2jcieev01-baro | The Barometer sensor sample     | Raspberry-Pi ZERO-W |
-| 2jcieev01-humi | The Illuminance sensor sample   | Raspberry-Pi ZERO-W |
-| 2jcieev01-illm | The Humidity sensor sample      | Raspberry-Pi ZERO-W |
-| 2jcieev01-accl | The Accelerometer sensor sample | Raspberry-Pi ZERO-W |
+| example | description                | baord |
+|:-------:|:---------------------------|:--------------------|
+| d6t-1a  | for the element type 1x1   | Raspberry-Pi ZERO-W |
+| d6t-8l  | for the element type 1x8   | Raspberry-Pi ZERO-W |
+| d6t-44l | for the element type 4x4   | Raspberry-Pi ZERO-W |
+| d6t-32l | for the element type 32x32 | Raspberry-Pi ZERO-W |
+
 
 ## DEMO
-T.B.D (console output)
+sample output for D6T-32L
+
+```
+```
+
 
 ## Installation
 ### Prerequisite
-- WiringPi (pre-installed in standard Raspbian)
 - gcc (pre-installed in standard Raspbian)
-- (Optional) ALSA library for microphone.
+
 
 ### Procedure
 this procedure shows the procedure to use the sensors on
-**2JCIE-EV01-RP1** (except microphone).
+**2JCIE-EV01-RP1** .
 
 1. download the archive from github [releases](releases) or
     [master](archive/2jcieev01-raspberrypi-master.zip)
@@ -39,98 +50,49 @@ this procedure shows the procedure to use the sensors on
     or, with git:
 
     ```shell
-    $ git clone https://github.com/omron-devhub/2jcieev01-raspberrypi
+    $ git clone https://github.com/omron-devhub/d6t-2jcieev01-raspberrypi
     ```
 
 2. make
 
     ```shell
-    $ cd 2jcieev01-raspberrypi-master
+    $ cd d6t-2jcieev01-raspberrypi-master
     $ make all
     ```
 
-3. run for barometer
+3. run
 
     ```shell
-    $ ./2jcieev01-baro
+    $ ./d6t-1a
     ```
-
-4. run for illuminance sensor
 
     ```shell
-    $ ./2jcieev01-illm
+    $ ./d6t-8l
     ```
-
-5. run for humidity sensor
 
     ```shell
-    $ ./2jcieev01-humi
+    $ ./d6t-44l
     ```
-
-6. run for accerelometer
 
     ```shell
-    $ ./2jcieev01-accl
+    $ ./d6t-32l
     ```
-
-### Procedure for microphone
-microphone on **2JCIE-EV01-RP1** is wired with
-standard Raspberry-Pi I2S connections.
-
-For enbale it, please refer below site:
-
-* [Adafruit Raspberry Pi Wiring & Test](https://learn.adafruit.com/adafruit-i2s-mems-microphone-breakout/raspberry-pi-wiring-and-test)
-
-* [Using the ICS43432 MEMS microphone on a Raspberry Pi with i2s](https://github.com/nejohnson2/rpi-i2s)
-
-microphone on **2JCIE-EV01-RP1** is not same on above site,
-but don't worry I2S microphones will work same procedure
-with high compatibility.
-
-#### Small output(volume) from microphone
-In some I2S reasons, microphone was treated as streao device
-and mixed the output by 50%(left) and 50%(right).
-
-- left: peseudo ouput and always output 0.
-- right: real ouput.
-
-then microphone output is small.
-you can fix the volume via `.asoundrc` like this::
-
-```shell
-$ cd $HOME
-$ cat > .asoundrc
-pcm.!default {
-    type plug
-    slave {
-        pcm i2s
-    }
-    ttable.0.0 1.0
-    ttable.0.1 1.0
-}
-
-pcm.i2s {
-    type hw
-    card 1
-}
-
-ctl.!default {
-    type hw
-    card 0
-}
-^D
-```
-
-**^D is ctrl + D**
 
 
 ## Links
 - [Arduino samples for 2JCIE-01-AR1/FT1](https://github.com/omron-devhub/2jcieev01-arduino)
+- [RaspberryPi samples for 2JCIE-01-RP1](https://github.com/omron-devhub/2jcieev01-raspberrypi)
 - [Arduino sample for D6T on 2JCIE-01-AR1/FT1](https://github.com/omron-devhub/d6t-2jcieev01-arduino)
-- [RaspberryPi sample for D6T on 2JCIE-01-RP1](https://github.com/omron-devhub/d6t-2jcieev01-raspberrypi)
 - [Arduino sample for D6F on 2JCIE-01-AR1/FT1](https://github.com/omron-devhub/d6f-2jcieev01-arduino)
 - [RaspberryPi sample for D6F on 2JCIE-01-RP1](https://github.com/omron-devhub/d6f-2jcieev01-raspberrypi)
 - [Arduino sample for B5W on 2JCIE-01-AR1/FT1](https://github.com/omron-devhub/b5w-2jcieev01-arduino)
+
+projects by another authors.
+
+- [d6t-grove-tinkerboard project](https://github.com/omron-devhub/d6t-grove-tinkerboard)
+- [d6t-grove-m5stack project](https://github.com/omron-devhub/d6t-grove-m5stack)
+- [d6t-grove-arduino project](https://github.com/omron-devhub/d6t-grove-arduino)  
+    only for element 4x4 type, but libralized.
 
 
 ## Licence

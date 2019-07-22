@@ -1,5 +1,5 @@
 
-.PHONY: baro illm humi accl mmic
+.PHONY: d6t-1a d6t-8l d6t-44l d6t-32l
 
 cpplint_flags:=--filter=-readability/casting,-build/include_subdir
 ifeq (x$(cpplint),x)
@@ -9,7 +9,7 @@ ifeq (x$(cppcheck),x)
 cppcheck := @echo lint with cppcheck, option:
 endif
 
-all: d6t-44l
+all: d6t-1a d6t-8l d6t-44l d6t-32l
 
 d6t-1a: d6t-1a.c
 	$(cpplint) $(cpplint_flags) $^
