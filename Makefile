@@ -8,35 +8,26 @@ endif
 ifeq (x$(cppcheck),x)
 cppcheck := @echo lint with cppcheck, option:
 endif
-ifeq (x$(wiringpi),x)
-wiringpi:=-lwiringPi
-endif
 
-all: baro illm humi accl mmic
+all: d6t-44l
 
-baro: 2jcieev01-baro.c
+d6t-1a: d6t-1a.c
 	$(cpplint) $(cpplint_flags) $^
 	$(cppcheck) --enable=all $^
-	gcc $(CFLAGS) $(wiringpi) $^ -o 2jcieev01-baro
+	gcc $(CFLAGS) $^ -o $@
 
-illm: 2jcieev01-illm.c
+d6t-8l: d6t-8l.c
 	$(cpplint) $(cpplint_flags) $^
 	$(cppcheck) --enable=all $^
-	gcc $(CFLAGS) $(wiringpi) $^ -o 2jcieev01-illm
+	gcc $(CFLAGS) $^ -o $@
 
-humi: 2jcieev01-humi.c
+d6t-44l: d6t-44l.c
 	$(cpplint) $(cpplint_flags) $^
 	$(cppcheck) --enable=all $^
-	gcc $(CFLAGS) $(wiringpi) $^ -o 2jcieev01-humi
+	gcc $(CFLAGS) $^ -o $@
 
-accl: 2jcieev01-accl.c
+d6t-32l: d6t-32l.c
 	$(cpplint) $(cpplint_flags) $^
 	$(cppcheck) --enable=all $^
-	gcc $(CFLAGS) $(wiringpi) $^ -o 2jcieev01-accl
-
-mmic:
-	@echo there is no sample for MEMS Microphone,
-	@echo you can use  MEMS Microphone sensor from ALSA libraries or
-	@echo basic `arecord` program.
-	@echo please refer the README.
+	gcc $(CFLAGS) $^ -o $@
 

@@ -23,7 +23,16 @@
  */
 
 /* includes */
-#include <Wire.h>
+#include <stdio.h>
+#include <stdint.h>
+#include <stdlib.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <string.h>
+#include <errno.h>
+#include <sys/ioctl.h>
+#include <linux/i2c-dev.h>
+#include <stdbool.h>
 
 /* defines */
 #define D6T_ADDR 0x0A  // for I2C 7bit address
@@ -34,6 +43,47 @@
 
 #define N_READ ((N_PIXEL + 1) * 2 + 1)
 uint8_t rbuf[N_READ];
+
+#define RASPBERRY_PI_I2C    "/dev/i2c-1"
+#define I2CDEV              RASPBERRY_PI_I2C
+
+
+/* I2C functions */
+/** <!-- i2c_read_reg8 {{{1 --> I2C read function for bytes transfer.
+ */
+uint32_t i2c_read_reg8(uint8_t devAddr, uint8_t regAddr,
+                       uint8_t *data, uint8_t length
+) {
+    int fd = open(I2CDEV, O_RDWR);
+
+    if (fd < 0) {
+        fprintf(stderr, "Failed to open device: %s\n", strerror(errno));
+        return 21;
+    }
+    int err = 0;
+    do {
+        if (ioctl(fd, I2C_SLAVE, devAddr) < 0) {
+            fprintf(stderr, "Failed to select device: %s\n", strerror(errno));
+            err = 22; break;
+        }
+        if (write(fd, &regAddr, 1) != 1) {
+            fprintf(stderr, "Failed to write reg: %s\n", strerror(errno));
+            err = 23; break;
+        }
+        int count = read(fd, data, length);
+        if (count < 0) {
+            fprintf(stderr, "Failed to read device(%d): %s\n",
+                    count, strerror(errno));
+            err = 24; break;
+        } else if (count != length) {
+            fprintf(stderr, "Short read  from device, expected %d, got %d\n",
+                    length, count);
+            err = 25; break;
+        }
+    } while (false);
+    close(fd);
+    return err;
+}
 
 
 uint8_t calc_crc(uint8_t data) {
@@ -59,11 +109,8 @@ bool D6T_checkPEC(uint8_t buf[], int n) {
     }
     bool ret = crc != buf[n];
     if (ret) {
-        Serial.print("PEC check failed:");
-        Serial.print(crc, HEX);
-        Serial.print("(cal) vs ");
-        Serial.print(buf[n], HEX);
-        Serial.println("(get)");
+        fprintf(stderr,
+                "PEC check failed: %02X(cal)-%02X(get)\n", crc, buf[n]);
     }
     return ret;
 }
@@ -79,55 +126,41 @@ int16_t conv8us_s16_le(uint8_t* buf, int n) {
 }
 
 
-/** <!-- setup {{{1 -->
- * 1. initialize a Serial port for output.
- * 2. initialize an I2C peripheral.
- */
-void setup() {
-    Serial.begin(115200);  // Serial bourd rate = 115200bps
-    Wire.begin();  // i2c master
-}
-
-
-/** <!-- loop - Thermal sensor {{{1 -->
+/** <!-- main - Thermal sensor {{{1 -->
  * 1. read sensor.
  * 2. output results, format is: [degC]
  */
-void loop() {
+int main() {
     int i, j;
 
     memset(rbuf, 0, N_READ);
     // Wire buffers are enough to read D6T-16L data (33bytes) with
     // MKR-WiFi1010 and Feather ESP32,
     // these have 256 and 128 buffers in their libraries.
-    Wire.beginTransmission(D6T_ADDR);  // I2C client address
-    Wire.write(D6T_CMD);               // D6T register
-    Wire.endTransmission();            // I2C repeated start for read
-    Wire.requestFrom(D6T_ADDR, N_READ);
-    i = 0;
-    while (Wire.available()) {
-        rbuf[i++] = Wire.read();
+    uint32_t ret = i2c_read_reg8(D6T_ADDR, D6T_CMD, rbuf, N_READ);
+    if (ret) {
+        return ret;
     }
 
     if (D6T_checkPEC(rbuf, N_READ - 1)) {
-        return;
+        return 1;
     }
 
     // 1st data is PTAT measurement (: Proportional To Absolute Temperature)
     int16_t itemp = conv8us_s16_le(rbuf, 0);
-    Serial.print("PTAT:");
-    Serial.println(itemp / 10.0, 1);
+    printf("PTAT: %5.1f[degC]\n", itemp / 10.0);
 
     // loop temperature pixels of each thrmopiles measurements
     for (i = 0, j = 2; i < N_PIXEL; i++, j += 2) {
         itemp = conv8us_s16_le(rbuf, j);
-        Serial.print(itemp / 10.0, 1);  // print PTAT & Temperature
+        printf("%4.1f", itemp / 10.0);  // print PTAT & Temperature
         if ((i % N_ROW) == N_ROW - 1) {
-            Serial.println(" [degC]");  // wrap text at ROW end.
+            printf(" [degC]\n");  // wrap text at ROW end.
         } else {
-            Serial.print(",");   // print delimiter
+            printf(",");   // print delimiter
         }
     }
     delay(1000);
+    return 0;
 }
 // vi: ft=arduino:fdm=marker:et:sw=4:tw=80
