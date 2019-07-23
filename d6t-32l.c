@@ -173,4 +173,4 @@ int main() {
     }
     return 0;
 }
-// vi: ft=arduino:fdm=marker:et:sw=4:tw=80
+// vi: ft=c:fdm=marker:et:sw=4:tw=80
