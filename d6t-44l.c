@@ -25,7 +25,6 @@
 /* includes */
 #include <stdio.h>
 #include <stdint.h>
-#include <stdlib.h>
 #include <fcntl.h>
 #include <unistd.h>
 #include <string.h>
@@ -33,6 +32,7 @@
 #include <sys/ioctl.h>
 #include <linux/i2c-dev.h>
 #include <stdbool.h>
+#include <time.h>
 
 /* defines */
 #define D6T_ADDR 0x0A  // for I2C 7bit address
@@ -52,7 +52,7 @@ uint8_t rbuf[N_READ];
 /** <!-- i2c_read_reg8 {{{1 --> I2C read function for bytes transfer.
  */
 uint32_t i2c_read_reg8(uint8_t devAddr, uint8_t regAddr,
-                       uint8_t *data, uint8_t length
+                       uint8_t *data, int length
 ) {
     int fd = open(I2CDEV, O_RDWR);
 
@@ -126,6 +126,13 @@ int16_t conv8us_s16_le(uint8_t* buf, int n) {
 }
 
 
+void delay(int msec) {
+    struct timespec ts = {.tv_sec = msec / 1000,
+                          .tv_nsec = (msec % 1000) * 1000000};
+    nanosleep(&ts, NULL);
+}
+
+
 /** <!-- main - Thermal sensor {{{1 -->
  * 1. read sensor.
  * 2. output results, format is: [degC]
@@ -134,21 +141,18 @@ int main() {
     int i, j;
 
     memset(rbuf, 0, N_READ);
-    // Wire buffers are enough to read D6T-16L data (33bytes) with
-    // MKR-WiFi1010 and Feather ESP32,
-    // these have 256 and 128 buffers in their libraries.
     uint32_t ret = i2c_read_reg8(D6T_ADDR, D6T_CMD, rbuf, N_READ);
     if (ret) {
         return ret;
     }
 
     if (D6T_checkPEC(rbuf, N_READ - 1)) {
-        return 1;
+        return 2;
     }
 
     // 1st data is PTAT measurement (: Proportional To Absolute Temperature)
     int16_t itemp = conv8us_s16_le(rbuf, 0);
-    printf("PTAT: %5.1f[degC]\n", itemp / 10.0);
+    printf("PTAT: %6.1f[degC]\n", itemp / 10.0);
 
     // loop temperature pixels of each thrmopiles measurements
     for (i = 0, j = 2; i < N_PIXEL; i++, j += 2) {
@@ -160,7 +164,6 @@ int main() {
             printf(",");   // print delimiter
         }
     }
-    delay(1000);
     return 0;
 }
 // vi: ft=arduino:fdm=marker:et:sw=4:tw=80
