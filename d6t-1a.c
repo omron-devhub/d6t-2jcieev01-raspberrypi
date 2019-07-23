@@ -38,8 +38,8 @@
 #define D6T_ADDR 0x0A  // for I2C 7bit address
 #define D6T_CMD 0x4C  // for D6T-44L-06/06H, D6T-8L-09/09H, for D6T-1A-01/02
 
-#define N_ROW 4
-#define N_PIXEL (4 * 4)
+#define N_ROW 1
+#define N_PIXEL 1
 
 #define N_READ ((N_PIXEL + 1) * 2 + 1)
 uint8_t rbuf[N_READ];

@@ -36,10 +36,10 @@
 
 /* defines */
 #define D6T_ADDR 0x0A  // for I2C 7bit address
-#define D6T_CMD 0x4C  // for D6T-44L-06/06H, D6T-8L-09/09H, for D6T-1A-01/02
+#define D6T_CMD 0x4D  // for D6T-32L-01A, compensated output.
 
-#define N_ROW 4
-#define N_PIXEL (4 * 4)
+#define N_ROW 32
+#define N_PIXEL (32 * 32)
 
 #define N_READ ((N_PIXEL + 1) * 2 + 1)
 uint8_t rbuf[N_READ];
@@ -67,13 +67,10 @@ uint32_t i2c_read_reg8(uint8_t devAddr, uint8_t regAddr,
             err = 22; break;
         }
         if (write(fd, &regAddr, 1) != 1) {
-            fprintf(stderr, "Failed to write reg: %s\n", strerror(errno));
             err = 23; break;
         }
         int count = read(fd, data, length);
         if (count < 0) {
-            fprintf(stderr, "Failed to read device(%d): %s\n",
-                    count, strerror(errno));
             err = 24; break;
         } else if (count != length) {
             fprintf(stderr, "Short read  from device, expected %d, got %d\n",
@@ -141,9 +138,19 @@ int main() {
     int i, j;
 
     memset(rbuf, 0, N_READ);
-    uint32_t ret = i2c_read_reg8(D6T_ADDR, D6T_CMD, rbuf, N_READ);
-    if (ret) {
-        return ret;
+    for (i = 0; i < 10; i++) {
+        uint32_t ret = i2c_read_reg8(D6T_ADDR, D6T_CMD, rbuf, N_READ);
+        if (ret == 0) {
+            break;
+        } else if (ret == 23) {  // write error
+            delay(60);
+        } else if (ret == 24) {  // read error
+            delay(3000);
+        }
+    }
+    if (i >= 10) {
+        fprintf(stderr, "Failed to read/write: %s\n", strerror(errno));
+        return 1;
     }
 
     if (D6T_checkPEC(rbuf, N_READ - 1)) {
