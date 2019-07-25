@@ -25,9 +25,14 @@ sample projects output the sensor data to USB-Serial ports.
 
 
 ## DEMO
-sample output for D6T-32L
+sample output from D6T-44L
 
 ```
+PTAT:   27.2[degC]
+27.5,27.3,27.3,27.3 [degC]
+27.2,27.1,27.1,27.2 [degC]
+27.1,27.1,27.3,27.3 [degC]
+27.0,27.3,27.3,27.0 [degC]
 ```
 
 
