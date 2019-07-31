@@ -16,7 +16,7 @@ of Stationary Human Presence,
 this Arduino sample projects for acquiring data from sensors on 2JCIE-EV01.
 sample projects output the sensor data to USB-Serial ports.
 
-| example | description                | baord |
+| example | description                | board |
 |:-------:|:---------------------------|:--------------------|
 | d6t-1a  | for the element type 1x1   | Raspberry-Pi ZERO-W |
 | d6t-8l  | for the element type 1x8   | Raspberry-Pi ZERO-W |
