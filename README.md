@@ -39,6 +39,7 @@ PTAT:   27.2[degC]
 ## Installation
 ### Prerequisite
 - gcc (pre-installed in standard Raspbian)
+- **Required** change I2C speed to 100kHz for D6T-1A/8L/44L (see below)
 
 
 ### Procedure
@@ -46,10 +47,10 @@ this procedure shows the procedure to use the sensors on
 **2JCIE-EV01-RP1** .
 
 1. download the archive from github [releases](releases) or
-    [master](archive/2jcieev01-raspberrypi-master.zip)
+    [master](archive/d6t-2jcieev01-raspberrypi-master.zip)
 
     ```shell
-    $ unzip 2jcieev01-raspberrypi-master.zip
+    $ unzip d6t-2jcieev01-raspberrypi-master.zip
     ```
 
     or, with git:
@@ -82,6 +83,23 @@ this procedure shows the procedure to use the sensors on
     ```shell
     $ ./d6t-32l
     ```
+
+
+### Change I2C speed to 100kHz or less
+1. edit /boot/config, find below string
+
+```
+dtparam=i2c_arm=on
+```
+
+2. change i2c speed: append the parameter `,i2c_arm_baudrate=n` ,
+    /boot/config will be changed as below.
+
+```
+dtparam=i2c_arm=on,i2c_arm_baudrate=100000
+```
+
+3. **Required** ) then reboot
 
 
 ## Links
