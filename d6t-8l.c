@@ -85,6 +85,30 @@ uint32_t i2c_read_reg8(uint8_t devAddr, uint8_t regAddr,
     return err;
 }
 
+/** <!-- i2c_write_reg8 {{{1 --> I2C read function for bytes transfer.
+ */
+uint32_t i2c_write_reg8(uint8_t devAddr,
+                        uint8_t *data, int length
+) {
+    int fd = open(I2CDEV, O_RDWR);
+    if (fd < 0) {
+        fprintf(stderr, "Failed to open device: %s\n", strerror(errno));
+        return 21;
+    }
+    int err = 0;
+    do {
+        if (ioctl(fd, I2C_SLAVE, devAddr) < 0) {
+            fprintf(stderr, "Failed to select device: %s\n", strerror(errno));
+            err = 22; break;
+        }
+        if (write(fd, data, length) != length) {
+            fprintf(stderr, "Failed to write reg: %s\n", strerror(errno));
+            err = 23; break;
+        }
+    } while (false);
+    close(fd);
+    return err;
+}
 
 uint8_t calc_crc(uint8_t data) {
     int index;
@@ -139,6 +163,18 @@ void delay(int msec) {
  */
 int main() {
     int i, j;
+
+    uint8_t dat1[] = {0x02, 0x00, 0x01, 0xee};
+    i2c_write_reg8(D6T_ADDR, dat1, sizeof(dat1));
+    uint8_t dat2[] = {0x05, 0x90, 0x3a, 0xb8};
+    i2c_write_reg8(D6T_ADDR, dat2, sizeof(dat2));
+    uint8_t dat3[] = {0x03, 0x00, 0x03, 0x8b};
+    i2c_write_reg8(D6T_ADDR, dat3, sizeof(dat3));
+    uint8_t dat4[] = {0x03, 0x00, 0x07, 0x97};
+    i2c_write_reg8(D6T_ADDR, dat4, sizeof(dat4));
+    uint8_t dat5[] = {0x02, 0x00, 0x00, 0xe9};
+    i2c_write_reg8(D6T_ADDR, dat5, sizeof(dat5));
+    delay(500);
 
     memset(rbuf, 0, N_READ);
     uint32_t ret = i2c_read_reg8(D6T_ADDR, D6T_CMD, rbuf, N_READ);
