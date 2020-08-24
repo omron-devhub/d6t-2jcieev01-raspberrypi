@@ -33,6 +33,7 @@
 #include <linux/i2c-dev.h>
 #include <stdbool.h>
 #include <time.h>
+#include <linux/i2c.h> //add
 
 /* defines */
 #define D6T_ADDR 0x0A  // for I2C 7bit address
@@ -40,13 +41,19 @@
 
 #define N_ROW 4
 #define N_PIXEL (4 * 4)
-
 #define N_READ ((N_PIXEL + 1) * 2 + 1)
-uint8_t rbuf[N_READ];
 
 #define RASPBERRY_PI_I2C    "/dev/i2c-1"
 #define I2CDEV              RASPBERRY_PI_I2C
 
+uint8_t rbuf[N_READ];
+double pix_data[N_PIXEL];
+
+void delay(int msec) {
+    struct timespec ts = {.tv_sec = msec / 1000,
+                          .tv_nsec = (msec % 1000) * 1000000};
+    nanosleep(&ts, NULL);
+}
 
 /* I2C functions */
 /** <!-- i2c_read_reg8 {{{1 --> I2C read function for bytes transfer.
@@ -69,6 +76,7 @@ uint32_t i2c_read_reg8(uint8_t devAddr, uint8_t regAddr,
         if (write(fd, &regAddr, 1) != 1) {
             err = 23; break;
         }
+	delay(1); //add
         int count = read(fd, data, length);
         if (count < 0) {
             err = 24; break;
@@ -82,6 +90,30 @@ uint32_t i2c_read_reg8(uint8_t devAddr, uint8_t regAddr,
     return err;
 }
 
+/** <!-- i2c_write_reg8 {{{1 --> I2C read function for bytes transfer.
+ */
+uint32_t i2c_write_reg8(uint8_t devAddr,
+                        uint8_t *data, int length
+) {
+    int fd = open(I2CDEV, O_RDWR);
+    if (fd < 0) {
+        fprintf(stderr, "Failed to open device: %s\n", strerror(errno));
+        return 21;
+    }
+    int err = 0;
+    do {
+        if (ioctl(fd, I2C_SLAVE, devAddr) < 0) {
+            fprintf(stderr, "Failed to select device: %s\n", strerror(errno));
+            err = 22; break;
+        }
+        if (write(fd, data, length) != length) {
+            fprintf(stderr, "Failed to write reg: %s\n", strerror(errno));
+            err = 23; break;
+        }
+    } while (false);
+    close(fd);
+    return err;
+}
 
 uint8_t calc_crc(uint8_t data) {
     int index;
@@ -112,7 +144,6 @@ bool D6T_checkPEC(uint8_t buf[], int n) {
     return ret;
 }
 
-
 /** <!-- conv8us_s16_le {{{1 --> convert a 16bit data from the byte stream.
  */
 int16_t conv8us_s16_le(uint8_t* buf, int n) {
@@ -122,13 +153,8 @@ int16_t conv8us_s16_le(uint8_t* buf, int n) {
     return (int16_t)ret;   // and convert negative.
 }
 
-
-void delay(int msec) {
-    struct timespec ts = {.tv_sec = msec / 1000,
-                          .tv_nsec = (msec % 1000) * 1000000};
-    nanosleep(&ts, NULL);
+void initialSetting(void) {
 }
-
 
 /** <!-- main - Thermal sensor {{{1 -->
  * 1. read sensor.
@@ -136,42 +162,30 @@ void delay(int msec) {
  */
 int main() {
     int i, j;
-
-
-    memset(rbuf, 0, N_READ);
-    for (i = 0; i < 10; i++) {
-        uint32_t ret = i2c_read_reg8(D6T_ADDR, D6T_CMD, rbuf, N_READ);
-        if (ret == 0) {
-            break;
-        } else if (ret == 23) {  // write error
-            delay(60);
-        } else if (ret == 24) {  // read error
-            delay(3000);
-        }
-    }
-    if (i >= 10) {
-        fprintf(stderr, "Failed to read/write: %s\n", strerror(errno));
-        return 1;
-    }
-
-    if (D6T_checkPEC(rbuf, N_READ - 1)) {
-        return 2;
-    }
-
-    // 1st data is PTAT measurement (: Proportional To Absolute Temperature)
-    int16_t itemp = conv8us_s16_le(rbuf, 0);
-    printf("PTAT: %6.1f[degC]\n", itemp / 10.0);
-
-    // loop temperature pixels of each thrmopiles measurements
-    for (i = 0, j = 2; i < N_PIXEL; i++, j += 2) {
-        itemp = conv8us_s16_le(rbuf, j);
-        printf("%4.1f", itemp / 10.0);  // print PTAT & Temperature
-        if ((i % N_ROW) == N_ROW - 1) {
-            printf(" [degC]\n");  // wrap text at ROW end.
-        } else {
-            printf(",");   // print delimiter
-        }
-    }
-    return 0;
+	initialSetting();
+	while(1){
+		memset(rbuf, 0, N_READ);
+		uint32_t ret = i2c_read_reg8(D6T_ADDR, D6T_CMD, rbuf, N_READ);
+		if (D6T_checkPEC(rbuf, N_READ - 1)) {
+			return 2;
+		}
+		// 1st data is PTAT measurement (: Proportional To Absolute Temperature)
+		int16_t itemp = conv8us_s16_le(rbuf, 0);
+		printf("PTAT: %4.1f [degC], Temperature: ", itemp / 10.0);
+	
+		// loop temperature pixels of each thrmopiles measurements
+		for (i = 0, j = 2; i < N_PIXEL; i++, j += 2) {
+			itemp = conv8us_s16_le(rbuf, j);
+			pix_data[i] = (double)itemp / 10.0;
+			printf("%4.1f", pix_data[i]);  // print Temperature
+			if ((i % N_ROW) == N_ROW - 1) {
+				printf(", ");  // wrap text at ROW end.
+			} else {
+				printf(", ");   // print delimiter
+			}
+		}
+		printf("[degC]\n");
+		delay(300);
+	}
 }
 // vi: ft=c:fdm=marker:et:sw=4:tw=80
