@@ -33,6 +33,7 @@
 #include <linux/i2c-dev.h>
 #include <stdbool.h>
 #include <time.h>
+#include <linux/i2c.h> //add
 
 /* defines */
 #define D6T_ADDR 0x0A  // for I2C 7bit address
@@ -47,51 +48,44 @@ uint8_t rbuf[N_READ];
 #define RASPBERRY_PI_I2C    "/dev/i2c-1"
 #define I2CDEV              RASPBERRY_PI_I2C
 
+double pix_data[N_PIXEL];
 
 /* I2C functions */
 /** <!-- i2c_read_reg8 {{{1 --> I2C read function for bytes transfer.
  */
 uint32_t i2c_read_reg8(uint8_t devAddr, uint8_t regAddr,
-                       uint8_t *data, int length
+	uint8_t *data, int length
 ) {
-    int fd = open(I2CDEV, O_RDWR);
+	int fd = open(I2CDEV, O_RDWR);
+	if (fd < 0) {
+		fprintf(stderr, "Failed to open device: %s\n", strerror(errno));
+		return 21;
+	}
+	int err = 0;
+	do {
+		struct i2c_msg messages[] = {
+			{ devAddr, 0, 1, &regAddr },
+			{ devAddr, I2C_M_RD, length, data },
+		};
+		struct i2c_rdwr_ioctl_data ioctl_data = { messages, 2 };
+		if (ioctl(fd, I2C_RDWR, &ioctl_data) != 2) {
+			fprintf(stderr, "i2c_read: failed to ioctl: %s\n", strerror(errno));
+		}
 
-    if (fd < 0) {
-        fprintf(stderr, "Failed to open device: %s\n", strerror(errno));
-        return 21;
-    }
-    int err = 0;
-    do {
-        if (ioctl(fd, I2C_SLAVE, devAddr) < 0) {
-            fprintf(stderr, "Failed to select device: %s\n", strerror(errno));
-            err = 22; break;
-        }
-        if (write(fd, &regAddr, 1) != 1) {
-            err = 23; break;
-        }
-        int count = read(fd, data, length);
-        if (count < 0) {
-            err = 24; break;
-        } else if (count != length) {
-            fprintf(stderr, "Short read  from device, expected %d, got %d\n",
-                    length, count);
-            err = 25; break;
-        }
-    } while (false);
-    close(fd);
-    return err;
+	} while (false);
+	close(fd); //change
+	return err;
 }
 
-
 uint8_t calc_crc(uint8_t data) {
-    int index;
-    uint8_t temp;
-    for (index = 0; index < 8; index++) {
-        temp = data;
-        data <<= 1;
-        if (temp & 0x80) {data ^= 0x07;}
-    }
-    return data;
+	int index;
+	uint8_t temp;
+	for (index = 0; index < 8; index++) {
+		temp = data;
+		data <<= 1;
+		if (temp & 0x80) { data ^= 0x07; }
+	}
+	return data;
 }
 
 /** <!-- D6T_checkPEC {{{ 1--> D6T PEC(Packet Error Check) calculation.
@@ -99,78 +93,78 @@ uint8_t calc_crc(uint8_t data) {
  * from an I2C Read client address (8bit) to thermal data end.
  */
 bool D6T_checkPEC(uint8_t buf[], int n) {
-    int i;
-    uint8_t crc = calc_crc((D6T_ADDR << 1) | 1);  // I2C Read address (8bit)
-    for (i = 0; i < n; i++) {
-        crc = calc_crc(buf[i] ^ crc);
-    }
-    bool ret = crc != buf[n];
-    if (ret) {
-        fprintf(stderr,
-                "PEC check failed: %02X(cal)-%02X(get)\n", crc, buf[n]);
-    }
-    return ret;
+	int i;
+	uint8_t crc = calc_crc((D6T_ADDR << 1) | 1);  // I2C Read address (8bit)
+	for (i = 0; i < n; i++) {
+		crc = calc_crc(buf[i] ^ crc);
+	}
+	bool ret = crc != buf[n];
+	if (ret) {
+		fprintf(stderr,
+			"PEC check failed: %02X(cal)-%02X(get)\n", crc, buf[n]);
+	}
+	return ret;
 }
-
 
 /** <!-- conv8us_s16_le {{{1 --> convert a 16bit data from the byte stream.
  */
 int16_t conv8us_s16_le(uint8_t* buf, int n) {
-    int ret;
-    ret = buf[n];
-    ret += buf[n + 1] << 8;
-    return (int16_t)ret;   // and convert negative.
+	int ret;
+	ret = buf[n];
+	ret += buf[n + 1] << 8;
+	return (int16_t)ret;   // and convert negative.
 }
-
 
 void delay(int msec) {
-    struct timespec ts = {.tv_sec = msec / 1000,
-                          .tv_nsec = (msec % 1000) * 1000000};
-    nanosleep(&ts, NULL);
+	struct timespec ts = { .tv_sec = msec / 1000,
+						  .tv_nsec = (msec % 1000) * 1000000 };
+	nanosleep(&ts, NULL);
 }
-
 
 /** <!-- main - Thermal sensor {{{1 -->
  * 1. read sensor.
  * 2. output results, format is: [degC]
  */
 int main() {
-    int i, j;
+	int i, j;
+	while (1) {
+		memset(rbuf, 0, N_READ);
+		for (i = 0; i < 10; i++) {
+			uint32_t ret = i2c_read_reg8(D6T_ADDR, D6T_CMD, rbuf, N_READ);
+			if (ret == 0) {
+				break;
+			}
+			else if (ret == 23) {  // write error
+				delay(60);
+			}
+			else if (ret == 24) {  // read error
+				delay(3000);
+			}
+		}
+		if (i >= 10) {
+			fprintf(stderr, "Failed to read/write: %s\n", strerror(errno));
+		}
 
-    memset(rbuf, 0, N_READ);
-    for (i = 0; i < 10; i++) {
-        uint32_t ret = i2c_read_reg8(D6T_ADDR, D6T_CMD, rbuf, N_READ);
-        if (ret == 0) {
-            break;
-        } else if (ret == 23) {  // write error
-            delay(60);
-        } else if (ret == 24) {  // read error
-            delay(3000);
-        }
-    }
-    if (i >= 10) {
-        fprintf(stderr, "Failed to read/write: %s\n", strerror(errno));
-        return 1;
-    }
+		if (D6T_checkPEC(rbuf, N_READ - 1)) {
+		}
 
-    if (D6T_checkPEC(rbuf, N_READ - 1)) {
-        return 2;
-    }
-
-    // 1st data is PTAT measurement (: Proportional To Absolute Temperature)
-    int16_t itemp = conv8us_s16_le(rbuf, 0);
-    printf("PTAT: %6.1f[degC]\n", itemp / 10.0);
-
-    // loop temperature pixels of each thrmopiles measurements
-    for (i = 0, j = 2; i < N_PIXEL; i++, j += 2) {
-        itemp = conv8us_s16_le(rbuf, j);
-        printf("%4.1f", itemp / 10.0);  // print PTAT & Temperature
-        if ((i % N_ROW) == N_ROW - 1) {
-            printf(" [degC]\n");  // wrap text at ROW end.
-        } else {
-            printf(",");   // print delimiter
-        }
-    }
-    return 0;
+		// 1st data is PTAT measurement (: Proportional To Absolute Temperature)
+		int16_t itemp = conv8us_s16_le(rbuf, 0);
+		printf("PTAT: %4.1f [degC], Temperature: ", itemp / 10.0);
+	
+		// loop temperature pixels of each thrmopiles measurements
+		for (i = 0, j = 2; i < N_PIXEL; i++, j += 2) {
+			itemp = conv8us_s16_le(rbuf, j);
+			pix_data[i] = (double)itemp / 10.0;
+			printf("%4.1f", pix_data[i]);  // print Temperature
+			if ((i % N_ROW) == N_ROW - 1) {
+				printf(", ");  // wrap text at ROW end.
+			} else {
+				printf(", ");   // print delimiter
+			}
+		}
+		printf("[degC]\n");  //add
+		delay(200);  //add
+	}
 }
 // vi: ft=c:fdm=marker:et:sw=4:tw=80
