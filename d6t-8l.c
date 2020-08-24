@@ -40,13 +40,12 @@
 
 #define N_ROW 8
 #define N_PIXEL 8
-
 #define N_READ ((N_PIXEL + 1) * 2 + 1)
-uint8_t rbuf[N_READ];
-
 #define RASPBERRY_PI_I2C    "/dev/i2c-1"
 #define I2CDEV              RASPBERRY_PI_I2C
 
+uint8_t rbuf[N_READ];
+double pix_data[N_PIXEL];
 
 /* I2C functions */
 /** <!-- i2c_read_reg8 {{{1 --> I2C read function for bytes transfer.
@@ -156,14 +155,7 @@ void delay(int msec) {
     nanosleep(&ts, NULL);
 }
 
-
-/** <!-- main - Thermal sensor {{{1 -->
- * 1. read sensor.
- * 2. output results, format is: [degC]
- */
-int main() {
-    int i, j;
-
+void initialSetting(void) {
     uint8_t dat1[] = {0x02, 0x00, 0x01, 0xee};
     i2c_write_reg8(D6T_ADDR, dat1, sizeof(dat1));
     uint8_t dat2[] = {0x05, 0x90, 0x3a, 0xb8};
@@ -175,31 +167,43 @@ int main() {
     uint8_t dat5[] = {0x02, 0x00, 0x00, 0xe9};
     i2c_write_reg8(D6T_ADDR, dat5, sizeof(dat5));
     delay(500);
+}
 
-    memset(rbuf, 0, N_READ);
-    uint32_t ret = i2c_read_reg8(D6T_ADDR, D6T_CMD, rbuf, N_READ);
-    if (ret) {
-        return ret;
-    }
+/** <!-- main - Thermal sensor {{{1 -->
+ * 1. read sensor.
+ * 2. output results, format is: [degC]
+ */
+int main() {
+    int i, j;
+	initialSetting();
+	while(1){
+		memset(rbuf, 0, N_READ);
+		uint32_t ret = i2c_read_reg8(D6T_ADDR, D6T_CMD, rbuf, N_READ);
+		if (ret) {
+			return ret;
+		}
 
-    if (D6T_checkPEC(rbuf, N_READ - 1)) {
-        return 2;
-    }
+		if (D6T_checkPEC(rbuf, N_READ - 1)) {
+			return 2;
+		}
 
-    // 1st data is PTAT measurement (: Proportional To Absolute Temperature)
-    int16_t itemp = conv8us_s16_le(rbuf, 0);
-    printf("PTAT: %6.1f[degC]\n", itemp / 10.0);
-
-    // loop temperature pixels of each thrmopiles measurements
-    for (i = 0, j = 2; i < N_PIXEL; i++, j += 2) {
-        itemp = conv8us_s16_le(rbuf, j);
-        printf("%4.1f", itemp / 10.0);  // print PTAT & Temperature
-        if ((i % N_ROW) == N_ROW - 1) {
-            printf(" [degC]\n");  // wrap text at ROW end.
-        } else {
-            printf(",");   // print delimiter
-        }
-    }
-    return 0;
+		// 1st data is PTAT measurement (: Proportional To Absolute Temperature)
+		int16_t itemp = conv8us_s16_le(rbuf, 0);
+		printf("PTAT: %4.1f [degC], Temperature: ", itemp / 10.0);
+	
+		// loop temperature pixels of each thrmopiles measurements
+		for (i = 0, j = 2; i < N_PIXEL; i++, j += 2) {
+			itemp = conv8us_s16_le(rbuf, j);
+			pix_data[i] = (double)itemp / 10.0;
+			printf("%4.1f", pix_data[i]);  // print Temperature
+			if ((i % N_ROW) == N_ROW - 1) {
+				printf(", ");  // wrap text at ROW end.
+			} else {
+				printf(", ");   // print delimiter
+			}
+		}
+		printf("[degC]\n");
+		delay(250);
+	}
 }
 // vi: ft=c:fdm=marker:et:sw=4:tw=80
