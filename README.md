@@ -12,28 +12,26 @@ of Stationary Human Presence,
 
 
 ## Description
-this Arduino sample projects for acquiring data from sensors on 2JCIE-EV01.
-sample projects output the sensor data to USB-Serial ports.
+this Raspberry Pi sample projects for acquiring data from sensors on 2JCIE-EV01.
+sample projects output the sensor data.
 
-| example | description                | board |
-|:-------:|:---------------------------|:--------------------|
-| d6t-1a  | for the element type 1x1   | Raspberry-Pi ZERO-W |
-| d6t-8l  | for the element type 1x8   | Raspberry-Pi ZERO-W |
-| d6t-44l | for the element type 4x4   | Raspberry-Pi ZERO-W |
-| d6t-32l | for the element type 32x32 | Raspberry-Pi ZERO-W |
+| example | sensor type                | pixel number           | board |
+|:-------:|:---------------------------|:-----------------------|:-----------------------|
+| d6t-1a  | D6T-1A-01 / D6T-1A-02  | 1x1   | Raspberry-Pi ZERO-W |
+| d6t-8l  | D6T-8L-09   | 1x8   | Raspberry-Pi ZERO-W |
+| d6t-8lh  | D6T-8L-09H   | 1x8   |  Raspberry-Pi ZERO-W |
+| d6t-44l | D6T-44L-06 / D6T-44L-06H   | 4x4   | Raspberry-Pi ZERO-W |
+| d6t-32l | D6T-32L-01A   | 32x32   |  Raspberry-Pi ZERO-W |
 
 
 ## DEMO
 sample output from D6T-44L
 
 ```
-PTAT:   27.2[degC]
-27.5,27.3,27.3,27.3 [degC]
-27.2,27.1,27.1,27.2 [degC]
-27.1,27.1,27.3,27.3 [degC]
-27.0,27.3,27.3,27.0 [degC]
+PTAT:   27.2[degC], Temperature: 27.5, 27.3, 27.3, 27.3, 27.2, 27.1, 27.1, 27.2, 27.1, 27.1, 27.3, 27.3, 27.0, 27.2, 27.3, 27.0, [degC]
+PTAT:   27.2[degC], Temperature: 27.4, 27.2, 27.3, 27.2, 27.2, 27.2, 27.3, 27.2, 27.2, 27.1, 27.3, 27.3, 27.0, 27.3, 27.3, 27.1, [degC]
+PTAT:   27.2[degC], Temperature: 27.5, 27.2, 27.5, 27.1, 27.2, 27.1, 27.2, 27.1, 27.1, 27.1, 27.3, 28.1, 28.2, 27.5, 27.2, 27.0, [degC]
 ```
-
 
 ## Installation
 ### Prerequisite
@@ -73,6 +71,10 @@ this procedure shows the procedure to use the sensors on
 
     ```shell
     $ ./d6t-8l
+    ```
+
+    ```shell
+    $ ./d6t-8lh
     ```
 
     ```shell
