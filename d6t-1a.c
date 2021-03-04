@@ -46,7 +46,7 @@
 
 uint8_t rbuf[N_READ];
 double ptat;
-double pix_data;
+double pix_data[N_PIXEL];
 
 /* I2C functions */
 /** <!-- i2c_read_reg8 {{{1 --> I2C read function for bytes transfer.
