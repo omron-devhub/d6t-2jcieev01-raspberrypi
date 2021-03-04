@@ -146,7 +146,7 @@ int16_t conv8us_s16_le(uint8_t* buf, int n) {
     uint16_t ret;
     ret = (uint16_t)buf[n];
     ret += ((uint16_t)buf[n + 1]) << 8;
-    return (int16_t)ret;   // and convert negative.
+    return (int16_t)ret;   //and convert negative.
 }
 
 
