@@ -157,40 +157,6 @@ void initialSetting(void) {
 }
 
 /** <!-- main - Thermal sensor {{{1 -->
- * 1. read sensor.
- * 2. output results, format is: [degC]
- */
-int main() {
-    int i, j;
-	initialSetting();
-	while(1){
-		memset(rbuf, 0, N_READ);
-		uint32_t ret = i2c_read_reg8(D6T_ADDR, D6T_CMD, rbuf, N_READ);
-		if (D6T_checkPEC(rbuf, N_READ - 1)) {
-			return 2;
-		}
-		// 1st data is PTAT measurement (: Proportional To Absolute Temperature)
-		int16_t itemp = conv8us_s16_le(rbuf, 0);
-		printf("PTAT: %4.1f [degC], Temperature: ", itemp / 10.0);
-	
-		// loop temperature pixels of each thrmopiles measurements
-		for (i = 0, j = 2; i < N_PIXEL; i++, j += 2) {
-			itemp = conv8us_s16_le(rbuf, j);
-			pix_data[i] = (double)itemp / 10.0;
-			printf("%4.1f", pix_data[i]);  // print Temperature
-			if ((i % N_ROW) == N_ROW - 1) {
-				printf(", ");  // wrap text at ROW end.
-			} else {
-				printf(", ");   // print delimiter
-			}
-		}
-		printf("[degC]\n");
-		delay(300);
-	}
-}
-
-
-/** <!-- main - Thermal sensor {{{1 -->
  * Read data
  */
 int main() {
