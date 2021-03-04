@@ -45,6 +45,7 @@
 #define I2CDEV              RASPBERRY_PI_I2C
 
 uint8_t rbuf[N_READ];
+double ptat;
 double pix_data;
 
 /* I2C functions */
@@ -142,9 +143,9 @@ bool D6T_checkPEC(uint8_t buf[], int n) {
 /** <!-- conv8us_s16_le {{{1 --> convert a 16bit data from the byte stream.
  */
 int16_t conv8us_s16_le(uint8_t* buf, int n) {
-    int ret;
-    ret = buf[n];
-    ret += buf[n + 1] << 8;
+    uint16_t ret;
+    ret = (uint16_t)buf[n];
+    ret += ((uint16_t)buf[n + 1]) << 8;
     return (int16_t)ret;   // and convert negative.
 }
 
@@ -159,34 +160,34 @@ void initialSetting(void) {
 }
 
 /** <!-- main - Thermal sensor {{{1 -->
- * 1. read sensor.
- * 2. output results, format is: [degC]
+ * Read data
  */
 int main() {
-    int i, j;
-	initialSetting();
+    int i;
+	int16_t itemp;
+	
+	delay(220);	
+	
 	while(1){
+		// Read data via I2C
 		memset(rbuf, 0, N_READ);
 		uint32_t ret = i2c_read_reg8(D6T_ADDR, D6T_CMD, rbuf, N_READ);
-		if (ret) {
-			return ret;
+		D6T_checkPEC(rbuf, N_READ - 1);
+		
+        //Convert to temperature data (degC)
+		ptat = (double)conv8us_s16_le(rbuf, 0) / 10.0;
+		for (i = 0; i < N_PIXEL; i++) {
+			itemp = conv8us_s16_le(rbuf, 2 + 2*i);
+			pix_data[i] = (double)itemp / 10.0;
 		}
-
-		if (D6T_checkPEC(rbuf, N_READ - 1)) {
-			return 2;
-		}
-
-		// 1st data is PTAT measurement (: Proportional To Absolute Temperature)
-		int16_t itemp = conv8us_s16_le(rbuf, 0);
-		printf("PTAT: %4.1f [degC], Temperature: ", itemp / 10.0);	
-		// loop temperature pixels of each thrmopiles measurements
-		for (i = 0, j = 2; i < N_PIXEL; i++, j += 2) {
-			itemp = conv8us_s16_le(rbuf, j);
-			pix_data = (double)itemp / 10.0;
-			printf("%4.1f", pix_data);  // print Temperature
-			printf(", ");
+		
+        //Output results		
+		printf("PTAT: %4.1f [degC], Temperature: ", ptat);
+		for (i = 0; i < N_PIXEL; i++) {
+		    printf("%4.1f, ", pix_data[i]);
 		}
 		printf("[degC]\n");
+		
 		delay(100);
 	}
 }
